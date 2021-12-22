@@ -1,18 +1,13 @@
 import genanki, random
 
 class Subdeck:
-    style = """* {
-      font-size: 1.1rem;
-      background-color: white;
-      color: black;
-    }
-    h2 {
-      font-size: 1.5rem;
-    }
-    .card.night_mode {
-      background-color: white;
-    color: black;
-    }
+    style = """
+h2 {
+  font-size: 1.5rem;
+}
+.card {
+  font-size: 1.2rem;
+}
     """
 
     model = genanki.Model(
@@ -26,7 +21,7 @@ class Subdeck:
             templates=[{
                 'name': 'Card 1',
                 'qfmt': '<p>{{Tags}}</p><h2>{{Question}}</h2>',
-                'afmt': '<h2>{{FrontSide}}</h2><hr id="answer">{{Answer}}',
+                'afmt': '{{FrontSide}}<hr id="answer">{{Answer}}',
             }],
             css= style
     )
