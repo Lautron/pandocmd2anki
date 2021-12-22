@@ -1,6 +1,6 @@
 from md2py import md2py
 from anki_deck import Subdeck
-import genanki, re
+import genanki, re, html
 
 def read_md(filename):
     """Read a markdown file and return its contents"""
@@ -23,7 +23,7 @@ def has_latex(text):
     return any([command in text for command in ["\\begin{center}", "\\begin{description}"]])
 
 def format_content(content):
-    res = "<br>".join([str(line) for line in content])\
+    res = "<br>".join([html.escape(str(line)) for line in content])\
                 .replace("\\newpage","")\
                 .replace("\\\n", "\\\\\n")
     if has_latex(res):
@@ -47,8 +47,8 @@ def create_subdeck(deck):
     
 
 def main():
-    markdown = read_md('test.md')
-    pkg_name = 'test'
+    markdown = read_md('anMat1.md')
+    pkg_name = 'anMat1'
     tree = md2py(markdown)
     decks = [create_subdeck(Subdeck(pkg_name, subdeck)) for subdeck in tree.h1s]
     genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
