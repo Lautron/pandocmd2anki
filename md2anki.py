@@ -29,17 +29,13 @@ def handle_math(text):
 def has_latex(text):
     return any([command in text for command in ["\\begin{center}", "\\begin{description}"]])
 
-def add_displaystyle(data):
-    replacements = [[rep, '\\displaystyle' + rep] for rep in ['\\frac', '\\int', '\\lim', '\\sum']]
+def make_replacements(data, replacements):
     for rep in replacements:
         data = data.replace(*rep)
     return data
 
 def format_content(content):
-    res = "<br>".join([html.escape(str(line)) for line in content])\
-                .replace("\\newpage","")\
-                .replace("\\\n", "\\\\\n")
-    res = add_displaystyle(res)
+    res = "<br>".join([html.escape(str(line)) for line in content])
     if has_latex(res):
         result = f'[latex]{res}[/latex]'
     else:
@@ -52,6 +48,7 @@ def create_subdeck(deck):
             for h3 in h2.h3s:
                 title = handle_math(f'{h2}: {h3}')
                 content = format_content(h3.ps)
+                if "Lagrange" in title: print(content)
                 deck.add_note(title, content)
         else:
             title = handle_math(str(h2))
@@ -62,8 +59,18 @@ def create_subdeck(deck):
 
 def main():
     files = handle_input(sys.argv)
+    replacements = [
+            *[[rep, f'\\displaystyle{rep}'] for rep in ['\\frac', '\\int', '\\lim', '\\sum']],
+            ["\\newpage",""],
+            ["\\\n", "\\\\\n"],
+            ["\\{", "\\\\{"],
+            ["\\}", "\\\\}"],
+    ]
     for file in files:
-        markdown = read_md(file)
+        markdown = make_replacements(
+            data=read_md(file), 
+            replacements=replacements
+        )
         pkg_name = file.split('.')[0]
         tree = md2py(markdown)
         decks = [create_subdeck(Subdeck(pkg_name, subdeck, num)) for num, subdeck in enumerate(tree.h1s, start=1)]
