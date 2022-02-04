@@ -1,6 +1,13 @@
 from md2py import md2py
 from anki_deck import Subdeck
-import genanki, re, html
+import genanki, re, html, sys
+
+def handle_input(args):
+    args = args[1:]
+    if not args:
+        print("usage: md2anki [FILES]")
+        sys.exit()
+    return args
 
 def read_md(filename):
     """Read a markdown file and return its contents"""
@@ -22,10 +29,17 @@ def handle_math(text):
 def has_latex(text):
     return any([command in text for command in ["\\begin{center}", "\\begin{description}"]])
 
+def add_displaystyle(data):
+    replacements = [[rep, '\\displaystyle' + rep] for rep in ['\\frac', '\\int', '\\lim', '\\sum']]
+    for rep in replacements:
+        data = data.replace(*rep)
+    return data
+
 def format_content(content):
     res = "<br>".join([html.escape(str(line)) for line in content])\
                 .replace("\\newpage","")\
                 .replace("\\\n", "\\\\\n")
+    res = add_displaystyle(res)
     if has_latex(res):
         result = f'[latex]{res}[/latex]'
     else:
@@ -47,11 +61,13 @@ def create_subdeck(deck):
     
 
 def main():
-    markdown = read_md('anMat1.md')
-    pkg_name = 'anMat1'
-    tree = md2py(markdown)
-    decks = [create_subdeck(Subdeck(pkg_name, subdeck)) for subdeck in tree.h1s]
-    genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
+    files = handle_input(sys.argv)
+    for file in files:
+        markdown = read_md(file)
+        pkg_name = file.split('.')[0]
+        tree = md2py(markdown)
+        decks = [create_subdeck(Subdeck(pkg_name, subdeck, num)) for num, subdeck in enumerate(tree.h1s, start=1)]
+        genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
 
 if __name__ == "__main__":
     main()
