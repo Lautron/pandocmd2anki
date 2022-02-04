@@ -7,6 +7,7 @@ h2 {
 }
 .card {
   font-size: 1.2rem;
+  line-height: 2;
 }
     """
 
@@ -25,9 +26,9 @@ h2 {
             }],
             css= style
     )
-    def __init__(self, pkg_name, subdeck):
+    def __init__(self, pkg_name, subdeck, num):
         # The '::' make it a subdeck
-        self.deck = genanki.Deck(random.randrange(1 << 30, 1 << 31), f"{pkg_name}::{subdeck}")
+        self.deck = genanki.Deck(random.randrange(1 << 30, 1 << 31), f"{pkg_name}::{num}) {subdeck}")
         self.tags = str(subdeck).replace(" ", "_")
         self.subdeck = subdeck
 
