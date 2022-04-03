@@ -26,11 +26,12 @@ h2 {
             }],
             css= style
     )
-    def __init__(self, pkg_name, subdeck, num):
+    def __init__(self, pkg_name, headings):
         # The '::' make it a subdeck
-        self.deck = genanki.Deck(random.randrange(1 << 30, 1 << 31), f"{pkg_name}::{num}) {subdeck}")
-        self.tags = str(subdeck).replace(" ", "_")
-        self.subdeck = subdeck
+        deck_num = random.randrange(1 << 30, 1 << 31)
+        self.deck_name = "::".join([pkg_name] + headings)
+        self.deck = genanki.Deck(deck_num, self.deck_name)
+        self.tags = " ".join([heading.replace(' ', '_') for heading in headings])
 
     def add_note(self, title, content):
         note = genanki.Note(
