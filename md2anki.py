@@ -22,8 +22,13 @@ def handle_math(text):
     return res
 
 def has_latex(text):
-    commands = ["\\begin{center}", "\\begin{description}", "\\begin{tabular}"]
-    return any([command in text for command in commands])
+    is_in = lambda text, commands: any([command in text for command in commands])
+    commands = ["\\begin{"]
+    exceptions = ["\\begin{cases}"]
+    if is_in(text, exceptions):
+        return False
+
+    return is_in(text, commands)
 
 def make_replacements(data, replacements):
     for elem in data:
@@ -31,10 +36,16 @@ def make_replacements(data, replacements):
             elem['content'] = elem['content'].replace(*rep)
     return data
 
+def add_latex_tag(content):
+    content = content.replace("\\begin{", "[latex]\\begin{")
+    pattern = re.compile(r"\\end{(.*?)}", re.DOTALL)
+    res = re.sub(pattern, lambda x: f"\\end{{{x.group(1)}}}\n[/latex]", content)
+    return res
+
 def format_content(content):
     res = html.escape(content).replace('\n', '<br>')
     if has_latex(res):
-        result = f'[latex]{res}[/latex]'
+        result = add_latex_tag(res)
     else:
         res = handle_math(res)
         pattern = re.compile(r"\\textbf{(.*?)}", re.DOTALL)
@@ -78,6 +89,8 @@ def main():
             ["\n{\n", "{"],
             ["\n}\n", "}"],
             ["\n_\n", "_"],
+            ["\\begin{tabular}", "\n\n\\begin{tabular}"],
+            ["*", "\n*"],
             #["\\{", "\\\\{"],
             #["\\}", "\\\\}"],
             #["\\_", "\\\\_"],
@@ -85,7 +98,7 @@ def main():
     for file in files:
         parsed_data = parse_file(file)
         clean_data = make_replacements(
-            data=parsed_datastr
+            data=parsed_data,
             replacements=replacements
         )
         pkg_name = file.split('.')[0]
