@@ -29,14 +29,16 @@ h2 {
     def __init__(self, pkg_name, headings):
         # The '::' make it a subdeck
         deck_num = random.randrange(1 << 30, 1 << 31)
-        self.deck_name = "::".join([pkg_name] + headings)
+        formatted_headings = [f"{'0'+str(ind) if ind < 10 else ind}) {heading}" for ind, heading in headings]
+        self.deck_name = "::".join([pkg_name] + formatted_headings)
         self.deck = genanki.Deck(deck_num, self.deck_name)
-        self.tags = [heading.replace(' ', '_') for heading in headings]
+        self.tags = [heading.replace(' ', '_') for heading in formatted_headings]
 
     def add_note(self, title, content):
         note = genanki.Note(
                 model=self.model,
                 fields=[title, content, " ".join(self.tags)],
-                tags=[self.deck_name.replace(' ', '_')]
+                tags=[self.deck_name.replace(' ', '_')],
+                sort_field=0
             )
         self.deck.add_note(note)

@@ -53,8 +53,9 @@ def format_content(content):
     return result
 
 def format_data(data):
+    #pprint.pprint(data)
     for item in data:
-        item['headings'] = [handle_math(heading) for heading in item['headings']]
+        item['headings'] = [(ind, handle_math(heading)) for ind, heading in item['headings']]
         item['content'] = format_content(item['content'])
 
 def create_decks(data, pkg_name):
@@ -65,7 +66,7 @@ def create_decks(data, pkg_name):
         if len(last_headings) > len(deck_headings):
             deck_headings = item['headings']
 
-        title = item['headings'][-1]
+        title = item['headings'][-1][1]
         content = item['content']
         if deck_headings == last_headings:
             subdeck = subdecks[-1]

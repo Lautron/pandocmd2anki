@@ -35,23 +35,28 @@ def parse_file(filename: str):
     prev_level = 1
     result = []
     chapters = split_by_heading(data, 1)
+    def get_count(count, level): 
+        res = count[level-2] 
+        count[level-2] += 1
+        return res
 
-    for chapter in chapters: 
+    for chap_ind, chapter in enumerate(chapters, start=1): 
         name = chapter[0]['children'][0]['content']
+        count = [1, 1, 1]
         for val in chapter[1:]:
             if val.get('type') == 'Heading':
                 level = val.get('level')
                 if result and level > prev_level:
-                    result[-1]['headings'].append(val['children'][0]['content'])
+                    result[-1]['headings'].append((1, val['children'][0]['content']))
 
                 elif result and level == prev_level:
                     result.append({
-                        'headings': [*result[-1]['headings'][:-1], val['children'][0]['content']],
+                        'headings': [*result[-1]['headings'][:-1], (get_count(count, level), val['children'][0]['content'])],
                                 'content': ''
                         })
                 else:
                     result.append({
-                                'headings': [name, val['children'][0]['content']],
+                                'headings': [(chap_ind, name), (get_count(count, level), val['children'][0]['content'])],
                                 'content': ''
                         })
                 prev_level = level
