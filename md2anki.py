@@ -42,15 +42,24 @@ def add_latex_tag(content):
     res = re.sub(pattern, lambda x: f"\\end{{{x.group(1)}}}\n[/latex]", content)
     return res
 
-def format_content(content):
-    res = html.escape(content).replace('\n', '<br>')
-    if has_latex(res):
-        result = add_latex_tag(res)
+def sep_by_type(content):
+    pattern = re.compile(r"(\\begin{.*?\\end{.*?})", re.DOTALL)
+    res = pattern.split(content)
+    return res
+
+def handle_part(part):
+    if has_latex(part):
+        result = add_latex_tag(part)
     else:
-        res = handle_math(res)
+        math_part = handle_math(part)
         pattern = re.compile(r"\\textbf{(.*?)}", re.DOTALL)
-        result = re.sub(pattern, lambda x: f"<strong>{x.group(1)}</strong>", res)
+        result = pattern.sub(lambda x: f"<strong>{x.group(1)}</strong>", math_part)
     return result
+
+def format_content(content):
+    escaped_content = html.escape(content).replace('\n', '<br>')
+    sep_content = sep_by_type(escaped_content)
+    return ''.join([handle_part(part) for part in sep_content])
 
 def format_data(data):
     #pprint.pprint(data)
@@ -104,7 +113,7 @@ def main():
         )
         pkg_name = file.split('.')[0]
         format_data(clean_data)
-        __import__('pprint').pprint(clean_data)
+        #__import__('pprint').pprint(clean_data)
 
         decks = create_decks(clean_data, pkg_name)
         genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
