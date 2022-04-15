@@ -1,6 +1,17 @@
 from parser import parse_file
 from anki_deck import Subdeck
 import genanki, re, html, sys
+from log import get_logger
+import inspect
+
+logger = get_logger('info')
+
+def log(level: str, *args) -> None:
+    caller_name = inspect.stack()[1].function
+    log_func = getattr(logger, level)
+    sep = ' - ' if len(args) == 1 else '\n  '
+    log_str = f"{caller_name}" + f"{sep}%s"* len(args)
+    log_func(log_str, *args)
 
 def handle_input(args):
     args = args[1:]
@@ -107,7 +118,7 @@ def main():
         )
         pkg_name = file.split('.')[0]
         format_data(clean_data)
-        for item in clean_data: print(item['headings'], "\n")
+        for item in clean_data: log('info', item['headings'])
         decks = create_decks(clean_data, pkg_name)
         genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
 
