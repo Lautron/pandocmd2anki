@@ -80,9 +80,7 @@ def parse_file(filename: str):
                     elif content_type == 'TableRow':
                         result[-1]['content'] += "TableRow" + "\n"
                     else:
-                        __import__('pprint').pprint(content)
                         result[-1]['content'] += content['content'] + "\n"
-    #__import__('pprint').pprint(result)
     return result
 if __name__ == "__main__":
     print(get_data_dict('AYED2.pmd'))
