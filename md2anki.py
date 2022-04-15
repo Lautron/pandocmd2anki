@@ -1,23 +1,22 @@
 from parser import parse_file
 from anki_deck import Subdeck
-import genanki, re, html, sys, pprint, flatdict
+import genanki, re, html, sys
 
 def handle_input(args):
     args = args[1:]
     if not args:
-        print("usage: md2anki [FILES]")
         sys.exit()
     return args
 
 def substitution_helper(match):
-    prefix, string, _ = match.groups()
-    if prefix == "$$":
-        return f'\\[{string.replace("$", " ")}\\]'
-    else:
+    single, string, double, string2 = match.groups()
+    if single:
         return f'\\({string}\\)'
+    elif double:
+        return f'\\[{string2}\\]'
 
 def handle_math(text):
-    pattern = re.compile(r"(\$+)(.+?)(\$+)", re.DOTALL)
+    pattern = re.compile(r"(?<!\$)(\$)(?!\$)([^\$]+?)\$|(\$\$)(.+?)\$\$", re.DOTALL)
     res = re.sub(pattern, substitution_helper, text)
     return res
 
@@ -27,7 +26,6 @@ def has_latex(text):
     exceptions = ["\\begin{cases}"]
     if is_in(text, exceptions):
         return False
-
     return is_in(text, commands)
 
 def make_replacements(data, replacements):
@@ -43,7 +41,7 @@ def add_latex_tag(content):
     return res
 
 def sep_by_type(content):
-    pattern = re.compile(r"(\\begin{.*?\\end{.*?})", re.DOTALL)
+    pattern = re.compile(r"((?:\$\$.*?)?\\begin{\w+}.*?\\end{\w+}(?:<br>\$\$)?)", re.DOTALL)
     res = pattern.split(content)
     return res
 
@@ -59,10 +57,9 @@ def handle_part(part):
 def format_content(content):
     escaped_content = html.escape(content).replace('\n', '<br>')
     sep_content = sep_by_type(escaped_content)
-    return ''.join([handle_part(part) for part in sep_content])
+    return ''.join([handle_part(part) for part in sep_content if part])
 
 def format_data(data):
-    #pprint.pprint(data)
     for item in data:
         item['headings'] = [(ind, handle_math(heading)) for ind, heading in item['headings']]
         item['content'] = format_content(item['content'])
@@ -82,10 +79,8 @@ def create_decks(data, pkg_name):
         else:
             subdeck = Subdeck(pkg_name, deck_headings)
             subdecks.append(subdeck)
-
         subdeck.add_note(title, content)
         last_headings = deck_headings
-
     res = [subdeck.deck for subdeck in subdecks]
     return res
 
@@ -112,8 +107,7 @@ def main():
         )
         pkg_name = file.split('.')[0]
         format_data(clean_data)
-        #__import__('pprint').pprint(clean_data)
-
+        for item in clean_data: print(item['headings'], "\n")
         decks = create_decks(clean_data, pkg_name)
         genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
 
