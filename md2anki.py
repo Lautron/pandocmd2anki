@@ -4,12 +4,13 @@ import genanki, re, html, sys
 from log import get_logger
 import inspect
 
-logger = get_logger('info')
+logger = get_logger('debug')
 
-def log(level: str, *args) -> None:
+def log(level: str, *args, sep=None) -> None:
     caller_name = inspect.stack()[1].function
     log_func = getattr(logger, level)
-    sep = ' - ' if len(args) == 1 else '\n  '
+    if not sep:
+        sep = ' - ' if len(args) == 1 else '\n  '
     log_str = f"{caller_name}" + f"{sep}%s"* len(args)
     log_func(log_str, *args)
 
@@ -52,8 +53,10 @@ def add_latex_tag(content):
     return res
 
 def sep_by_type(content):
-    pattern = re.compile(r"((?:\$\$.*?)?\\begin{\w+}.*?\\end{\w+}(?:<br>\$\$)?)", re.DOTALL)
+    log('debug', 'CONTENT:', content, sep='\n  ')
+    pattern = re.compile(r"((?:\$\$.*?)?\\begin{.*?}.*?\\end{.*?}(?:<br>\$\$)?)", re.DOTALL)
     res = pattern.split(content)
+    log('debug', 'SPLIT:', *res, sep=',\n  ')
     return res
 
 def handle_part(part):
