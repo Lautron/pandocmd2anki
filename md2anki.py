@@ -2,17 +2,8 @@ from parser import parse_file
 from anki_deck import Subdeck
 import genanki, re, html, sys
 from log import get_logger
-import inspect
 
-logger = get_logger('debug')
-
-def log(level: str, *args, sep=None) -> None:
-    caller_name = inspect.stack()[1].function
-    log_func = getattr(logger, level)
-    if not sep:
-        sep = ' - ' if len(args) == 1 else '\n  '
-    log_str = f"{caller_name}" + f"{sep}%s"* len(args)
-    log_func(log_str, *args)
+logger, log = get_logger('debug', __name__)
 
 def handle_input(args):
     args = args[1:]
@@ -86,7 +77,8 @@ def create_decks(data, pkg_name):
         if len(last_headings) > len(deck_headings):
             deck_headings = item['headings']
 
-        title = item['headings'][-1][1]
+        title = ": ".join([title[1] for title in item['headings'][-2:]])
+        log('debug', item['headings'], title)
         content = item['content']
         if deck_headings == last_headings:
             subdeck = subdecks[-1]
