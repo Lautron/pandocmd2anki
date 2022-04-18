@@ -1,9 +1,9 @@
-import logging
+import logging, inspect
 
-def get_logger(str_level='info'):
+def get_logger(str_level='info', name=__name__):
     level = getattr(logging, str_level.upper())
     # Create a custom logger
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(name)
     logger.setLevel(level)
 
     # Create handlers
@@ -20,4 +20,14 @@ def get_logger(str_level='info'):
     # Add handlers to the logger
     logger.addHandler(c_handler)
     logger.addHandler(f_handler)
-    return logger
+
+    def log(level: str, *args, sep=None) -> None:
+        caller_name = inspect.stack()[1].function
+        log_func = getattr(logger, level)
+        if not sep:
+            sep = ' - ' if len(args) == 1 else '\n  '
+        log_str = f"{caller_name}" + f"{sep}%s"* len(args)
+        log_func(log_str, *args)
+
+    return logger, log
+
