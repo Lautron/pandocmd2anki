@@ -1,5 +1,8 @@
 import mistletoe, json
 from mistletoe.ast_renderer import ASTRenderer
+from log import get_logger
+
+logger, log = get_logger('debug', __name__)
 
 def open_file(filename):
     with open(filename, 'r') as md_file:
@@ -48,17 +51,23 @@ def parse_file(filename: str):
                 level = val.get('level')
                 if result and level > prev_level:
                     result[-1]['headings'].append((1, val['children'][0]['content']))
+                    prev_level = level
+                    continue
 
                 elif result and level == prev_level:
-                    result.append({
-                        'headings': [*result[-1]['headings'][:-1], (get_count(count, level), val['children'][0]['content'])],
-                                'content': ''
-                        })
+                    headings = [*result[-1]['headings'][:-1], (get_count(count, level), val['children'][0]['content'])]
+
+                elif result and level == prev_level-1 and level > 2:
+                    headings = [*result[-1]['headings'][:-2], (get_count(count, level), val['children'][0]['content'])]
+
                 else:
-                    result.append({
-                                'headings': [(chap_ind, name), (get_count(count, level), val['children'][0]['content'])],
-                                'content': ''
-                        })
+                    headings = [(chap_ind, name), (get_count(count, level), val['children'][0]['content'])]
+
+                log('debug', level, headings)
+                result.append({
+                            'headings': headings,
+                            'content': ''
+                    })
                 prev_level = level
 
 
@@ -83,7 +92,7 @@ def parse_file(filename: str):
                         result[-1]['content'] += content['content'] + "\n"
     return result
 if __name__ == "__main__":
-    print(get_data_dict('AYED2.pmd'))
+    parse_file('parcial1_AnNum.pmd')
 
 
 
