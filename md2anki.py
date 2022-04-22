@@ -1,6 +1,6 @@
 from parser import parse_file
 from anki_deck import Subdeck
-import genanki, re, html, sys
+import genanki, re, html, sys, os
 from log import get_logger
 
 logger, log = get_logger('debug', __name__)
@@ -23,12 +23,17 @@ def handle_math(text):
     res = re.sub(pattern, substitution_helper, text)
     return res
 
+is_in = lambda text, commands: any([command in text for command in commands])
+
 def has_latex(text):
-    is_in = lambda text, commands: any([command in text for command in commands])
     commands = ["\\begin{"]
     exceptions = ["\\begin{cases}"]
     if is_in(text, exceptions):
         return False
+    return is_in(text, commands)
+
+def has_img(text):
+    commands = [".png", ".jpg"]
     return is_in(text, commands)
 
 def make_replacements(data, replacements):
@@ -53,6 +58,7 @@ def sep_by_type(content):
 def handle_part(part):
     if has_latex(part):
         result = add_latex_tag(part)
+
     else:
         math_part = handle_math(part)
         pattern = re.compile(r"\\textbf{(.*?)}", re.DOTALL)
@@ -69,9 +75,20 @@ def format_data(data):
         item['headings'] = [(ind, handle_math(heading)) for ind, heading in item['headings']]
         item['content'] = format_content(item['content'])
 
+def get_img_paths(content):
+    imgs = re.findall(r"((?:.*/)*.*.png)<br>", content)
+    return imgs
+    #return [img[2:] for img in imgs]
+
+def format_imgs(content):
+    sub_helper = lambda match: f'<img src="{match.group(1)}" width=50%>'
+    res = re.sub(r"(?:.*/)*(.*.png)<br>.*", sub_helper, content)
+    return res
+    
 def create_decks(data, pkg_name):
     subdecks = []
     last_headings = []
+    img_paths = []
     for item in data:
         deck_headings = item['headings'][:-1]
         if len(last_headings) > len(deck_headings):
@@ -80,6 +97,10 @@ def create_decks(data, pkg_name):
         title = ": ".join([title[1] for title in item['headings'][-2:]])
         log('debug', item['headings'], title)
         content = item['content']
+        if has_img(content):
+            img_paths.extend(get_img_paths(content))
+            content = format_imgs(content)
+
         if deck_headings == last_headings:
             subdeck = subdecks[-1]
         else:
@@ -88,7 +109,7 @@ def create_decks(data, pkg_name):
         subdeck.add_note(title, content)
         last_headings = deck_headings
     res = [subdeck.deck for subdeck in subdecks]
-    return res
+    return img_paths, res
 
 
 def main():
@@ -114,8 +135,10 @@ def main():
         pkg_name = file.split('.')[0]
         format_data(clean_data)
         for item in clean_data: log('info', item['headings'])
-        decks = create_decks(clean_data, pkg_name)
-        genanki.Package(decks).write_to_file(f'{pkg_name}.apkg')
+        imgs, decks = create_decks(clean_data, pkg_name)
+        pkg = genanki.Package(decks)
+        pkg.media_files = imgs
+        pkg.write_to_file(f'{pkg_name}.apkg')
 
 if __name__ == "__main__":
     main()
