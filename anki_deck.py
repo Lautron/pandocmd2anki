@@ -1,6 +1,8 @@
 import genanki, random
+from note import Note
 
-class Subdeck:
+
+class AnkiDeck:
     style = """
 h2 {
   font-size: 1.5rem;
@@ -12,33 +14,43 @@ h2 {
     """
 
     model = genanki.Model(
-            9907821780,
-            'Lautaro B model',
-            fields=[
-                {'name': 'Question'},
-                {'name': 'Answer'},
-                {'name': 'Tags'},
-            ],
-            templates=[{
-                'name': 'Card 1',
-                'qfmt': '<p>{{Tags}}</p><h2>{{Question}}</h2>',
-                'afmt': '{{FrontSide}}<hr id="answer">{{Answer}}',
-            }],
-            css= style
+        9907821780,
+        "Lautaro B model",
+        fields=[
+            {"name": "Question"},
+            {"name": "Answer"},
+        ],
+        templates=[
+            {
+                "name": "Card 1",
+                "qfmt": "<p>{{Tags}}</p><h2>{{Question}}</h2>",
+                "afmt": '{{FrontSide}}<hr id="answer">{{Answer}}',
+            }
+        ],
+        css=style,
     )
-    def __init__(self, pkg_name, headings):
+
+    def __init__(self, name):
         # The '::' make it a subdeck
         deck_num = random.randrange(1 << 30, 1 << 31)
-        formatted_headings = [f"{'0'+str(ind) if ind < 10 else ind}) {heading}" for ind, heading in headings]
-        self.deck_name = "::".join([pkg_name] + formatted_headings)
-        self.deck = genanki.Deck(deck_num, self.deck_name)
-        self.tags = [heading.replace(' ', '_') for heading in formatted_headings]
+        self.deck_name = name
+        self._deck = genanki.Deck(deck_num, self.deck_name)
 
-    def add_note(self, title, content):
+    def add_note(self, note: Note):
+        main_tag = self.deck_name.replace(" ", "_")
+        title = note.get_title()
+        content = note.get_content()
         note = genanki.Note(
-                model=self.model,
-                fields=[title, content, " ".join(self.tags)],
-                tags=[self.deck_name.replace(' ', '_')],
-                sort_field=0
-            )
-        self.deck.add_note(note)
+            model=self.model,
+            fields=[title, content],
+            tags=[f"{main_tag}::{note.get_tags()}"],
+            sort_field=note.get_index(),
+        )
+        self._deck.add_note(note)
+
+    def add_notes(self, notes: list[Note]):
+        for note in notes:
+            self.add_note(note)
+
+    def get_deck(self):
+        return self._deck
